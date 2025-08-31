@@ -64,12 +64,13 @@ class Tree:
 class Parser:
     def getpage(self, link):
         try:
+            logger.debug(f"Открываем: {link}")
             res = requests.get(link)
             res.raise_for_status()
             encoding = chardet.detect(res.content)['encoding']
             html = res.content.decode(encoding, errors='replace')
 
-            with open('last-fetch.html', 'w', encoding='utf-8') as file:
+            with open('postupi/last-fetch.html', 'w', encoding='utf-8') as file:
                 file.write(html)
             return html
         

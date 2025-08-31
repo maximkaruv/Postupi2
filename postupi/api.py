@@ -18,8 +18,8 @@ class PostupiAPI:
                 tree = parser.newtree(html)
                 cards = tree.select('.list-cover > ul > li.list')
 
-                current_page = tree.select('.act_page').text()
-                yield DictIt(current_page=current_page)
+                current_page = int(tree.select('.act_page').text())
+                output = []
 
                 for card in cards:
                     title = card.select('h2 > a').text()
@@ -50,7 +50,7 @@ class PostupiAPI:
                             elif "платно" in row_title:
                                 paid_places = row_value
                     
-                    yield DictIt(
+                    output.append(DictIt(
                         title=title,
                         id=id,
                         link=link,
@@ -59,7 +59,9 @@ class PostupiAPI:
                         learning_cost=learning_cost,
                         budget_places=budget_places,
                         paid_places=paid_places
-                    )
+                    ))
+                
+                return (current_page, output)
         
         return Univs()
     
@@ -71,6 +73,8 @@ class PostupiAPI:
                 )
                 tree = parser.newtree(html)
                 cards = tree.select('.list-cover > ul > li.list')
+
+                output = []
 
                 for card in cards:
                     title = card.select('h2 > a').text()
@@ -98,7 +102,7 @@ class PostupiAPI:
                             elif "платно" in row_title:
                                 paid_score = row_value
 
-                    yield DictIt(
+                    output.append(DictIt(
                         title=title,
                         id=id,
                         link=link,
@@ -107,7 +111,9 @@ class PostupiAPI:
                         paid_places=paid_places,
                         budget_score=budget_score,
                         paid_score=paid_score
-                    )
+                    ))
+                
+                return output
             
             def get_details(self, prog_id):
                 html = parser.getpage(
