@@ -51,6 +51,9 @@ class Parser:
 
                 def __len__(self):
                     return len(self.elements)
+                
+                def tag(self, index=0):
+                    return self.elements[index].tag
 
                 def text(self, index=0, default=''):
                     try:
@@ -184,8 +187,38 @@ class PostupiAPI:
                         paid_score=paid_score
                     )
             
-            def get_details():
-                pass
+            def get_details(self, prog_id):
+                html = parser.getpage(
+                    f"https://{city_id}.postupi.online/vuz/{univ_id}/programma/{prog_id}/"
+                )
+                tree = parser.newtree(html)
+                description = tree.select('.descr-max > *')
+
+                decs, subs = [], []
+                get_next_ul = False
+
+                for element in description:
+                    match element.tag():
+
+                        case 'p':
+                            text = element.text()
+                            if len(text) > 40:
+                                decs.append(text)
+                            elif "Основн" in text:
+                                get_next_ul = True
+                        
+                        case 'ul':
+                            if get_next_ul:
+                                for sub in element.select('li'):
+                                    subs.append(sub.text())
+                                get_next_ul = False
+
+                decs = '\n\n'.join(decs)
+
+                return DictIt(
+                    description=decs,
+                    subjects=subs
+                )
 
         return Programs()
 
@@ -198,10 +231,18 @@ postupi = PostupiAPI()
 
 # namespace(title='Российский экономический университет имени Г.В. Плеханова', univ_id='reu-im-g-v-plehanova', link='https://msk.postupi.online/vuz/reu-im-g-v-plehanova/', city='Москва', city_id='msk', learning_cost='157 000', budget_places='1 347', paid_places='3 160')
 
-progs = postupi.programs('msk', 'reu-im-g-v-plehanova').get_catalog("01.03.02")
-for prog in progs:
-    print(prog)
+
+
+# progs = postupi.programs('msk', 'reu-im-g-v-plehanova').get_catalog("01.03.02")
+# for prog in progs:
+#     print(prog)
 
 # namespace(title='Интеллектуальный анализ данных и поддержка принятия решений', prog_id='11887', link='https://msk.postupi.online/vuz/reu-im-g-v-plehanova/programma/11887/', learning_cost='360 000', budget_places='5', paid_places='18', budget_score='94', paid_score='80')
 
-# python postupi.py
+
+
+#print(postupi.programs('msk', 'reu-im-g-v-plehanova').get_details('11887'))
+
+# namespace(description='Студенты этой программы изучают широкий спектр тем, связанных с обработкой и анализом данных, а также созданием интеллектуальных систем. Они изучают основы программирования, алгоритмы и структуры данных, базы данных и SQL. Кроме того, они получают знания в области статистики и вероятности, машинного обучения, искусственного интеллекта и глубокого обучения. Программа также включает изучение методов визуализации данных и разработку навыков работы с большими объемами информации. Студенты учатся применять эти знания для решения реальных проблем и задач, связанных с анализом данных и разработкой интеллектуальных систем. В результате обучения выпускники программы готовы эффективно работать с данными, использовать инструменты и методы анализа данных, а также создавать интеллектуальные системы, способные автоматизировать и оптимизировать процессы на основе данных.\n\nДисциплины специализации, с оанных, а также создавать интеллектуальные системы, способные автоматизировать и оптимизировать процессы на основе данных.\n\nДисциплины специализации, с одной стороны, дают фундаментальные основы интеллектуальных систем, а с другой стороны знакомят с самыми современными инструментами исследователей и аналитдной стороны, дают фундаментальные основы интеллектуальных систем, а с другой стороны знакомят с самыми современными инструментами исследователей и аналитиков в области интеллектуального анализа данных.', subjects=['Искусственный интеллект (Artificial Intelligent) и разработка интеллектуальных систем (Intelligent Systems Development).', 'Методы анализа «больших данных» (Big Data Analysis), майнинг данных (Data Mining) и визуализация данных (Data Visualization).', 'Машинное обучение (Machine Learning).', 'Анализ формальных понятий (Formal Concept Analysis).', 'Анализ сетей (Network Analysis) и прикладная теория графов (Applied Graph Theory).', 'Онтологическое моделирование (Ontology Engineering) и семантические технологии (Semantic Technologies).', 'Мультимодальная кластеризация (Multi-Modal Clustering) и рекомендательные системы (Recommender Systems).', 'Автоматическая обработка текста (Natural Language Processing) и распознавание образов (Pattern Recognition).'])
+
+### python postupi.py ###
