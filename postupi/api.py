@@ -18,15 +18,18 @@ class PostupiAPI:
                 tree = parser.newtree(html)
                 cards = tree.select('.list-cover > ul > li.list')
 
+                current_page = tree.select('.act_page').text()
+                yield DictIt(current_page=current_page)
+
                 for card in cards:
                     title = card.select('h2 > a').text()
                     link = card.select('h2 > a').attr('href')
 
-                    city_id, univ_id = '', ''
+                    city_id, id = '', ''
                     match = re.search(r'https://(.*?)\.postupi\.online/vuz/(.*?)/', link)
                     if match:
                         city_id = match.group(1)
-                        univ_id = match.group(2)
+                        id = match.group(2)
 
                     metadata = card.select('.list__pre > span')
                     if len(metadata) <= 2:
@@ -49,7 +52,7 @@ class PostupiAPI:
                     
                     yield DictIt(
                         title=title,
-                        univ_id=univ_id,
+                        id=id,
                         link=link,
                         city=city,
                         city_id=city_id,
@@ -74,7 +77,7 @@ class PostupiAPI:
                     link = card.select('h2 > a').attr('href')
 
                     match = re.search(r'programma/(.*?)/', link)
-                    prog_id = match.group(1) if match else ''
+                    id = match.group(1) if match else ''
 
                     learning_cost = card.select('.list__price > b').text()
 
@@ -97,7 +100,7 @@ class PostupiAPI:
 
                     yield DictIt(
                         title=title,
-                        prog_id=prog_id,
+                        id=id,
                         link=link,
                         learning_cost=learning_cost,
                         budget_places=budget_places,
@@ -135,8 +138,8 @@ class PostupiAPI:
                 decs = '\n\n'.join(decs)
 
                 return DictIt(
-                    description=decs,
-                    subjects=subs
+                    decs=decs,
+                    subs=subs
                 )
 
         return Programs()
