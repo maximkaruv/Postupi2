@@ -37,23 +37,29 @@ class Parser:
                 raise ValueError("Tree странный объект")
 
         def select(self, selector):
-
             class Elements:
                 def __init__(self, elements):
-                    self.elements = elements
+                    # если один HtmlElement, оборачиваем в список
+                    if isinstance(elements, HtmlElement):
+                        self.elements = [elements]
+                    else:
+                        self.elements = elements
 
                 def __iter__(self):
-                    return iter(self.elements)
-                
+                    for el in self.elements:
+                        yield Elements(el)  # возвращаем обёрнутый элемент
+
                 def __len__(self):
                     return len(self.elements)
 
                 def text(self, index=0, default=''):
                     try:
-                        text = self.elements[index].text_content().strip()
-                        text = re.sub(r'\s+', ' ', text)
+                        text = self.elements[index].text_content()
+                        text = text.replace('\xa0', ' ')
+                        text = re.sub(r'\s+', ' ', text).strip()
+                        if not text or all(c in '.·' for c in text):
+                            return default
                         return text
-                    
                     except IndexError:
                         return default
 
@@ -63,12 +69,17 @@ class Parser:
                     except IndexError:
                         return default
 
+                def select(self, selector):
+                    new_elements = []
+                    for el in self.elements:
+                        new_elements.extend(el.cssselect(selector))
+                    return Elements(new_elements)
+
             elements = self.tree.cssselect(selector)
             return Elements(elements)
     
     def newtree(self, content):
         return Parser.Tree(content)
-
 
 parser = Parser()
 
@@ -83,12 +94,9 @@ class PostupiAPI:
                     f"https://postupi.online/specialnost/{spec}/vuzi/?page_num={page}"
                 )
                 tree = parser.newtree(html)
-                cards = tree.select('.list-cover > ul > li')#.elements
+                cards = tree.select('.list-cover > ul > li')
 
-                for card_elem in cards:
-                    #card = parser.newtree(card_elem)
-                    card = card_elem
-
+                for card in cards:
                     title = card.select('h2 > a').text()
                     link = card.select('h2 > a').attr('href')
 
@@ -98,8 +106,7 @@ class PostupiAPI:
                         city_id = match.group(1)
                         univ_id = match.group(2)
 
-                    metadata = tree.select('.list__pre > span')
-                    print(len(metadata), metadata.text(index=0), metadata.text(index=1), metadata.text(index=2))
+                    metadata = card.select('.list__pre > span')
                     if len(metadata) <= 2:
                         city = metadata.text(index=0)
                     else:
