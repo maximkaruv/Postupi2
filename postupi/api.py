@@ -1,4 +1,4 @@
-from modules.parser import Parser
+from postupi.parser import Parser
 from types import SimpleNamespace as DictIt
 import re
 

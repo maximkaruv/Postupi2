@@ -1,5 +1,7 @@
-from modules.postupi import PostupiAPI
+from database.table import CsvTable
+from postupi.api import PostupiAPI
 
+table = CsvTable('data/universities.csv', ['...'])
 postupi = PostupiAPI()
 
 def main():
