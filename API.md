@@ -36,7 +36,7 @@
 
 ## Программы обучения
 
-`list-cover > ul > li`
+`.list-cover > ul > li`
 
 Название программы: `h2 > a`
 
@@ -46,7 +46,7 @@
 `spbpu` - код вуза
 `29` - айди программы
 
-Стоимость обучения: `list__price > b`
+Стоимость обучения: `.list__price > b`
 
 Балл ЕГЭ на бюджет: `div.list__score-wrap b`[?]
 "бал|бюджет" - `div.list__score-wrap span.hidden-mid`[?]

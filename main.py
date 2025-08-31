@@ -89,19 +89,19 @@ class PostupiAPI:
     
     def univs(self):
         class Univs:
-            def getcatalog(self, spec, page=1):
+            def get_catalog(self, spec_code, page=1):
                 html = parser.getpage(
-                    f"https://postupi.online/specialnost/{spec}/vuzi/?page_num={page}"
+                    f"https://postupi.online/specialnost/{spec_code}/vuzi/?page_num={page}"
                 )
                 tree = parser.newtree(html)
-                cards = tree.select('.list-cover > ul > li')
+                cards = tree.select('.list-cover > ul > li.list')
 
                 for card in cards:
                     title = card.select('h2 > a').text()
                     link = card.select('h2 > a').attr('href')
 
                     city_id, univ_id = '', ''
-                    match = re.match(r'https://(.*?)\.postupi\.online/vuz/(.*?)/', link)
+                    match = re.search(r'https://(.*?)\.postupi\.online/vuz/(.*?)/', link)
                     if match:
                         city_id = match.group(1)
                         univ_id = match.group(2)
@@ -112,12 +112,12 @@ class PostupiAPI:
                     else:
                         city = metadata.text(index=1)
                     
-                    learning_cost = tree.select('.list__price > b').text()
+                    learning_cost = card.select('.list__price > b').text()
 
                     budget_places, paid_places = '', ''
                     for i in range(0, 4):
-                        row_title = tree.select('div.list__score-wrap span.hidden-mid').text(index=i)
-                        row_value = tree.select('div.list__score-wrap b').text(index=i)
+                        row_title = card.select('div.list__score-wrap span.hidden-mid').text(index=i)
+                        row_value = card.select('div.list__score-wrap b').text(index=i)
 
                         if "мест" in row_title:
                             if "бюджет" in row_title:
@@ -137,11 +137,71 @@ class PostupiAPI:
                     )
 
         return Univs()
+    
+    def programs(self, city_id, univ_id):
+        class Programs:
+            def get_catalog(self, spec_code):
+                html = parser.getpage(
+                    f"https://{city_id}.postupi.online/vuz/{univ_id}/specialnost/{spec_code}/programmy-obucheniya/forma-ochno/"
+                )
+                tree = parser.newtree(html)
+                cards = tree.select('.list-cover > ul > li.list')
+
+                for card in cards:
+                    title = card.select('h2 > a').text()
+                    link = card.select('h2 > a').attr('href')
+
+                    match = re.search(r'programma/(.*?)/', link)
+                    prog_id = match.group(1) if match else ''
+
+                    learning_cost = card.select('.list__price > b').text()
+
+                    budget_places, paid_places = '', ''
+                    budget_score, paid_score = '', ''
+                    for i in range(0, 4):
+                        row_title = card.select('div.list__score-wrap span.hidden-mid').text(index=i)
+                        row_value = card.select('div.list__score-wrap b').text(index=i)
+
+                        if "мест" in row_title:
+                            if "бюджет" in row_title:
+                                budget_places = row_value
+                            elif "платно" in row_title:
+                                paid_places = row_value
+                        elif "бал" in row_title:
+                            if "бюджет" in row_title:
+                                budget_score = row_value
+                            elif "платно" in row_title:
+                                paid_score = row_value
+
+                    yield DictIt(
+                        title=title,
+                        prog_id=prog_id,
+                        link=link,
+                        learning_cost=learning_cost,
+                        budget_places=budget_places,
+                        paid_places=paid_places,
+                        budget_score=budget_score,
+                        paid_score=paid_score
+                    )
+            
+            def get_details():
+                pass
+
+        return Programs()
 
 
 postupi = PostupiAPI()
-univs = postupi.univs().getcatalog("01.03.02")
-for univ in univs:
-    print(univ)
+
+# univs = postupi.univs().get_catalog("01.03.02")
+# for univ in univs:
+#     print(univ)
+
+# namespace(title='Российский экономический университет имени Г.В. Плеханова', univ_id='reu-im-g-v-plehanova', link='https://msk.postupi.online/vuz/reu-im-g-v-plehanova/', city='Москва', city_id='msk', learning_cost='157 000', budget_places='1 347', paid_places='3 160')
+
+progs = postupi.programs('msk', 'reu-im-g-v-plehanova').get_catalog("01.03.02")
+for prog in progs:
+    print(prog)
+
+# namespace(title='Интеллектуальный анализ данных и поддержка принятия решений', prog_id='11887', link='https://msk.postupi.online/vuz/reu-im-g-v-plehanova/programma/11887/', learning_cost='360 000', budget_places='5', paid_places='18', budget_score='94', paid_score='80')
 
 # python postupi.py
